@@ -63,3 +63,11 @@ Invoke-WebRequest http://localhost:8080/about
 ```powershell
 Invoke-WebRequest -Method Post -Body 'key1=value1&key2=value2' http://localhost:8080/post
 ```
+
+### Makefile
+
+编译运行的命令可以写在`Makefile`中，方便使用。可以在命令行直接运行`make`命令编译，或者使用`make run`命令进行编译+运行。
+
+```powershell
+make run
+```
