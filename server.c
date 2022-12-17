@@ -189,6 +189,7 @@ int main(int argc, char *argv[])
                     // 找到了 URL，将其解析出来
                     char response[4096];
                     char *html;
+                    char *res_content;
 
                     if (strcmp(request_uri, "/") == 0)
                     {
@@ -196,13 +197,13 @@ int main(int argc, char *argv[])
                                "Welcome to the index page!\n"
                                "Go to <a href=\"/about\">about</a> page."
                                "</body></html>";
-                        char *response_content =
+                        res_content =
                             "HTTP/1.1 200 OK\r\n"
                             "Content-Type: text/html\r\n"
                             "Content-Length: %d\r\n"
                             "\r\n"
                             "%s";
-                        sprintf(response, response_content, strlen(html), html);
+                        sprintf(response, res_content, strlen(html), html);
                         send(client_socket, response, strlen(response), 0);
                         printf("Response:\n%s",response);
                     }
@@ -212,13 +213,13 @@ int main(int argc, char *argv[])
                                "This is the about page.\n"
                                "Go to <a href=\"/\">index</a> page."
                                "</body></html>";
-                        char *response_content =
+                        res_content =
                             "HTTP/1.1 200 OK\r\n"
                             "Content-Type: text/html\r\n"
                             "Content-Length: %d\r\n"
                             "\r\n"
                             "%s";
-                        sprintf(response, response_content, strlen(html), html);
+                        sprintf(response, res_content, strlen(html), html);
                         send(client_socket, response, strlen(response), 0);
                         printf("Response:\n%s", response);
                     }
@@ -260,13 +261,13 @@ int main(int argc, char *argv[])
                         html = "<html><body>"
                         "This is the 404 page."
                         "</body></html>";
-                        char *response_content =
+                        res_content =
                             "HTTP/1.1 404 Not Found\r\n"
                             "Content-Type: text/html\r\n"
                             "Content-Length: %d\r\n"
                             "\r\n"
                             "%s";
-                        sprintf(response, response_content, strlen(html), html);
+                        sprintf(response, res_content, strlen(html), html);
                         send(client_socket, response, strlen(response), 0);
                         printf("Response:\n%s", response);
                     }
