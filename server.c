@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     %p - 指针
     puts() 只能输出普通字符串，虽然不能使用格式化，但是它结尾自带换行符`\n`。
     */
-    
+
     if (result != 0)
     {
         // 初始化失败，退出程序
@@ -80,10 +80,10 @@ int main(int argc, char *argv[])
     htons 函数用于将 16 位的主机字节序转换为网络字节序。
     htonl 函数用于将 32 位的主机字节序转换为网络字节序。
 
-    主机字节序和网络字节序是两种不同的字节序，用于表示数字在存储器中的顺序。 
+    主机字节序和网络字节序是两种不同的字节序，用于表示数字在存储器中的顺序。
     字节序是指字节在内存中的存储顺序。
 
-    主机字节序是指一台计算机所使用的字节序。 例如，如果你的计算机是一台 
+    主机字节序是指一台计算机所使用的字节序。 例如，如果你的计算机是一台
     Intel 架构的计算机，则它的主机字节序是小端字节序；如果你的计算机是一台
      ARM 架构的计算机，则它的主机字节序是大端字节序。
 
@@ -144,13 +144,13 @@ int main(int argc, char *argv[])
             （例如 GET 或 POST）和请求的资源路径来决定如何处理请求。
             */
 
-            puts(buffer);
+            printf("Received:\n%s",buffer);
             char *method = strtok(buffer, " ");
             char *request_uri = strtok(NULL, " ");
             char *http_version = strtok(NULL, "\r\n");
-            puts(method);
-            puts(request_uri);
-            puts(http_version);
+            // puts(method);
+            // puts(request_uri);
+            // puts(http_version);
 
             /*
             最后，你可以使用 send 函数向客户端发送响应。
@@ -163,18 +163,26 @@ int main(int argc, char *argv[])
             并使用 send 函数将其发送给客户端。
             */
 
-            char *server_error_html = "<html><body>This is the 404 page.</body></html>";
+            char *server_error_html =
+                "<html><body>"
+                "This is the 500 Internal Server Error page."
+                "</body></html>";
             if (strcmp(method, "GET") == 0)
             {
                 // 处理 GET 请求
                 if (request_uri == NULL)
                 {
-                    // 未找到 URL，发送错误响应
+                    // 发生错误，发送错误响应
+                    char *server_error_content =
+                        "HTTP/1.1 500 Internal Server Error\r\n"
+                        "Content-Type: text/html\r\n"
+                        "Content-Length: %d\r\n"
+                        "\r\n"
+                        "%s";
                     char response[4096];
-
-                    sprintf(response, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\nContent-Length: %d\r\n\r\n%s", strlen(server_error_html), server_error_html);
+                    sprintf(response, server_error_content, strlen(server_error_html), server_error_html);
                     send(client_socket, response, strlen(response), 0);
-                    perror("url is null");
+                    perror("Internal Server Error");
                 }
                 else
                 {
@@ -184,19 +192,84 @@ int main(int argc, char *argv[])
 
                     if (strcmp(request_uri, "/") == 0)
                     {
-                        html = "<html><body>Welcome to the index page!</body></html>";
+                        html = "<html><body>"
+                               "Welcome to the index page!\n"
+                               "Go to <a href=\"/about\">about</a> page."
+                               "</body></html>";
+                        char *response_content =
+                            "HTTP/1.1 200 OK\r\n"
+                            "Content-Type: text/html\r\n"
+                            "Content-Length: %d\r\n"
+                            "\r\n"
+                            "%s";
+                        sprintf(response, response_content, strlen(html), html);
+                        send(client_socket, response, strlen(response), 0);
+                        printf("Response:\n%s",response);
                     }
                     else if (strcmp(request_uri, "/about") == 0)
                     {
-                        html = "<html><body>This is the about page.</body></html>";
+                        html = "<html><body>"
+                               "This is the about page.\n"
+                               "Go to <a href=\"/\">index</a> page."
+                               "</body></html>";
+                        char *response_content =
+                            "HTTP/1.1 200 OK\r\n"
+                            "Content-Type: text/html\r\n"
+                            "Content-Length: %d\r\n"
+                            "\r\n"
+                            "%s";
+                        sprintf(response, response_content, strlen(html), html);
+                        send(client_socket, response, strlen(response), 0);
+                        printf("Response:\n%s", response);
+                    }
+                    else if (strcmp(request_uri, "/favicon.ico") == 0)
+                    {
+                        FILE *picFile = fopen("favicon.png", "rb");
+                        // 获取图片大小
+                        fseek(picFile, 0, SEEK_END);
+                        int picSize = ftell(picFile);
+                        rewind(picFile);
+                        // 发送响应头
+                        const char *header =
+                            "HTTP/1.1 200 OK\r\n"
+                            "Content-Type: image/png\r\n"
+                            "Content-Length: %d\r\n"
+                            "\r\n";
+                        char headerBuffer[1024];
+                        sprintf_s(headerBuffer, 1024, header, picSize);
+                        result = send(client_socket, headerBuffer, strlen(headerBuffer), 0);
+                        if (result == SOCKET_ERROR)
+                        {
+                            // 处理错误
+                        }
+                        // 发送图片数据
+                        const int BUFFER_SIZE = 8192;
+                        char buffer[BUFFER_SIZE];
+                        int bytesRead;
+                        while ((bytesRead = fread(buffer, 1, BUFFER_SIZE, picFile)) > 0)
+                        {
+                            result = send(client_socket, buffer, bytesRead, 0);
+                            if (result == SOCKET_ERROR)
+                            {
+                                // 处理错误
+                            }
+                        }
                     }
                     else
                     {
-                        html = "<html><body>This is the 404 page.</body></html>";
+                        html = "<html><body>"
+                        "This is the 404 page."
+                        "</body></html>";
+                        char *response_content =
+                            "HTTP/1.1 404 Not Found\r\n"
+                            "Content-Type: text/html\r\n"
+                            "Content-Length: %d\r\n"
+                            "\r\n"
+                            "%s";
+                        sprintf(response, response_content, strlen(html), html);
+                        send(client_socket, response, strlen(response), 0);
+                        printf("Response:\n%s", response);
                     }
-                    sprintf(response, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\n\r\n%s", strlen(html), html);
-                    send(client_socket, response, strlen(response), 0);
-                    puts(response);
                 }
             }
             else if (strcmp(method, "POST") == 0)
